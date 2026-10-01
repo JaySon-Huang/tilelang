@@ -42,6 +42,7 @@ public:
   void VisitStmt_(const BindNode *op) final;                        // NOLINT(*)
   void VisitStmt_(const AllocBufferNode *op) final;                 // NOLINT(*)
   void VisitStmt_(const AttrStmtNode *op) final;                    // NOLINT(*)
+  void VisitStmt_(const EvaluateNode *op) final;                    // NOLINT(*)
   void VisitStmt_(const ForNode *op) final;                         // NOLINT(*)
   void VisitExpr_(const SelectNode *op, std::ostream &os) final;    // NOLINT(*)
   void VisitExpr_(const BroadcastNode *op, std::ostream &os) final; // NOLINT(*)

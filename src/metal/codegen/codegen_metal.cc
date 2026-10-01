@@ -594,6 +594,20 @@ void CodeGenTileLangMetal::VisitStmt_(const AttrStmtNode *op) {
   CodeGenC::VisitStmt_(op);
 }
 
+void CodeGenTileLangMetal::VisitStmt_(const EvaluateNode *op) {
+  // Metal has no programmatic dependent launch (PDL): dispatches on a
+  // command stream are already ordered and there is no early-launch
+  // mechanism, so the ordering guarantee of tl.pdl_sync and the launch
+  // hint of tl.pdl_trigger are satisfied by emitting nothing.
+  if (const auto *call = op->value.as<CallNode>()) {
+    if (call->op.same_as(tl::pdl_trigger()) ||
+        call->op.same_as(tl::pdl_sync())) {
+      return;
+    }
+  }
+  CodeGenC::VisitStmt_(op);
+}
+
 void CodeGenTileLangMetal::VisitStmt_(const ForNode *op) {
   auto *min_imm = op->min.as<IntImmNode>();
   auto *ext_imm = op->extent.as<IntImmNode>();
