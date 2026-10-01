@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "cuda/op/builtin.h"
 #include "metal/op/builtin.h"
 #include "runtime/thread_storage_scope.h"
 #include "target/build_common.h"
@@ -1709,6 +1710,20 @@ void CodeGenTileLangMetal::VisitExpr_(const CallNode *op,
     os << " + ";
     this->PrintExpr(op->args[1], os);
     os << "))";
+  } else if (op->op.same_as(tl::ieee_fmaf())) {
+    // IEEE fused multiply-add: metal_stdlib's fma(x, y, z) computes
+    // x * y + z with a single rounding (round-to-nearest, the only
+    // rounding mode Metal exposes).
+    TVM_FFI_ICHECK_EQ(op->args.size(), 4U);
+    const auto *rounding = op->args[3].as<StringImmNode>();
+    TVM_FFI_ICHECK(rounding != nullptr && rounding->value == "rn")
+        << "Metal only supports round-to-nearest for ieee_fmaf, got '"
+        << (rounding ? std::string(rounding->value) : "non-string") << "'";
+    DataType t = op->dtype;
+    TVM_FFI_ICHECK((t.is_float() && t.bits() == 32) || t.is_float16())
+        << "Metal fma supports float32/float16 only, got " << t;
+    os << "fma(" << PrintExpr(op->args[0]) << ", " << PrintExpr(op->args[1])
+       << ", " << PrintExpr(op->args[2]) << ")";
   } else {
     CodeGenC::VisitExpr_(op, os);
   }
